@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <title>Web-GIS with GeoServer and Leaflet</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(45deg, #007bff, #6610f2);
+            color: white;
+        }
+
+        .navbar .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .navbar .nav-link {
+            color: white !important;
+            font-weight: 500;
+        }
+
+        /* Map Style */
+        #map {
+            width: 100%;
+            height: calc(100vh - 56px);
+        }
+
+        
+
+        /* Modal Style */
+        .modal-content {
+            border-radius: 15px;
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #6610f2, #007bff);
+            color: white;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .modal-body table th,
+        .modal-body table td {
+            font-size: 1rem;
+        }
+
+        /* Layer Control Hover Effect */
+        .leaflet-control-layers-toggle:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border: 1px solid black;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        #legend h4 {
+            grid-column: 1 / span 2;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"> <i class="fa-solid fa-map-location-dot"></i> WebGIS Kabupaten Sleman</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://geoportal.slemankab.go.id/" target="_blank">
+                            <i class="fa-solid fa-layer-group"></i> Sumber
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#infoModal">
+                            <i class="fa-solid fa-lightbulb"></i> Info
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Peta -->
+    <div id="map"></div>
+
+    <!-- Legenda -->
+    <div id="legend">
+        <h4>Legenda</h4>
+        <img src="http://localhost:8080/geoserver/ows?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=pgwbx:ADMINISTRASIDESA_AR_25K&style=kecstyle&format=image/png"
+            alt="Kabupaten Jateng DIY">
+    </div>
+
+    <!-- Modal Info -->
+    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="infoModalLabel">Informasi Pembuat</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped table-bordered">
+                        <tr>
+                            <th>Nama</th>
+                            <td>RISMA KUSUMAJATI</td>
+                        </tr>
+                        <tr>
+                            <th>NIM</th>
+                            <td>23/518881/SV/23080</td>
+                        </tr>
+                        <tr>
+                            <th>Kelas</th>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <th>GitHub</th>
+                            <td><a href="https://github.com/kusumajat" target="_blank" rel="noopener noreferrer">kusumaj</a></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Inisialisasi peta
+        var map = L.map("map").setView([-7.677567, 110.406899], 11);
+
+        // Tambahkan layer OpenStreetMap sebagai base map
+        var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        osm.addTo(map);
+
+        // Fungsi untuk menambahkan layer WMS dari GeoServer
+        function addGeoServerLayer(baseUrl, layerName, layerTitle) {
+            return L.tileLayer.wms(baseUrl, {
+                layers: layerName,
+                format: "image/png",
+                transparent: true,
+                attribution: "GeoServer",
+            });
+        }
+
+        var radiusMerapiLayer = addGeoServerLayer(
+            "https://geoportal.slemankab.go.id/geoserver/wms",
+            "geonode:3404_50k_ln_radius_jarak_merapi",
+            "Radius Jarak Merapi"
+        );
+        radiusMerapiLayer.addTo(map);
+
+        var batasDesa = addGeoServerLayer(
+            "http://localhost:8080/geoserver/wms",
+            "pgwbx:ADMINISTRASIDESA_AR_25K",
+            "Batas Administrasi Desa"
+        );
+        batasDesa.addTo(map);
+
+        var jalanKabupaten = addGeoServerLayer(
+            "https://geoportal.slemankab.go.id/geoserver/wms",
+            "geonode:jalan_kabupaten_sleman_2023",
+            "Jalan Kabupaten Sleman"
+        );
+        jalanKabupaten.addTo(map);
+
+        // Kontrol layer
+        var baseMaps = {
+            "OpenStreetMap": osm,
+        };
+
+        var overlayMaps = {
+            "Batas Administrasi Desa": batasDesa,
+            "Jalan Kabupaten Sleman": jalanKabupaten,
+            "Radius Merapi": radiusMerapiLayer,
+        };
+
+        L.control.layers(baseMaps, overlayMaps).addTo(map);
+    </script>
+</body>
+
+</html>
